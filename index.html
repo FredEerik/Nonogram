@@ -1,101 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nonogram Game</title>
   <style>
     body {
       font-family: sans-serif;
+      background: #f0f0f0;
       display: flex;
       flex-direction: column;
       align-items: center;
-      background-color: #f0f0f0;
       padding: 20px;
     }
     h2 {
       margin-bottom: 10px;
     }
-    .grid {
-      display: grid;
-      gap: 2px;
+    .controls {
       margin-bottom: 10px;
     }
-    .cell {
+    .nonogram-container {
+      display: grid;
+      gap: 0;
+    }
+    .cell, .clue-cell {
       width: 30px;
       height: 30px;
-      background-color: white;
-      border: 1px solid #ccc;
       box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      border: 1px solid #ccc;
+    }
+    .clue-cell {
+      background-color: #e0e0e0;
+      white-space: pre-line;
+      text-align: center;
+    }
+    .cell {
+      background-color: white;
       cursor: pointer;
+      user-select: none;
     }
     .cell.filled {
       background-color: #333;
+      color: white;
     }
-    .clues {
-      margin: 10px;
-      text-align: center;
+    .cell.cross::after {
+      content: "✕";
+      color: red;
+      font-size: 16px;
+    }
+    .cell.thick-border-right {
+      border-right: 3px solid #000;
+    }
+    .cell.thick-border-bottom {
+      border-bottom: 3px solid #000;
+    }
+    button {
+      margin: 4px;
+      padding: 8px 16px;
     }
     #result {
       margin-top: 20px;
       font-weight: bold;
     }
-    button {
-      margin: 5px;
-      padding: 8px 16px;
-    }
   </style>
 </head>
 <body>
   <h2>Nonogram Puzzle</h2>
-  <div>
+  <div class="controls">
     <button onclick="initGrid(5)">5×5</button>
     <button onclick="initGrid(10)">10×10</button>
     <button onclick="initGrid(15)">15×15</button>
   </div>
-  <div class="grid" id="nonogram"></div>
+  <div class="nonogram-container" id="nonogram"></div>
   <button onclick="checkSolution()">Check</button>
   <div id="result"></div>
 
   <script>
     let gridSize = 5;
-    let gridElement = document.getElementById("nonogram");
     let cells = [];
     let solution = [];
+
+    const container = document.getElementById("nonogram");
 
     function generateSolution(size) {
       const sol = [];
       for (let r = 0; r < size; r++) {
         const row = [];
         for (let c = 0; c < size; c++) {
-          row.push(Math.random() < 0.4 ? 1 : 0); // 40% filled
+          row.push(Math.random() < 0.4 ? 1 : 0);
         }
         sol.push(row);
       }
       return sol;
     }
 
+    function getClues(arr, isColumn = false) {
+      const size = arr.length;
+      const clues = [];
+      for (let i = 0; i < size; i++) {
+        const line = [];
+        let count = 0;
+        for (let j = 0; j < size; j++) {
+          const val = isColumn ? arr[j][i] : arr[i][j];
+          if (val === 1) {
+            count++;
+          } else if (count > 0) {
+            line.push(count);
+            count = 0;
+          }
+        }
+        if (count > 0) line.push(count);
+        if (line.length === 0) line.push(0);
+        clues.push(line);
+      }
+      return clues;
+    }
+
     function initGrid(size) {
       gridSize = size;
       solution = generateSolution(size);
-      gridElement.innerHTML = "";
-      gridElement.style.gridTemplateColumns = `repeat(${size}, 30px)`;
-      gridElement.style.gridTemplateRows = `repeat(${size}, 30px)`;
       cells = [];
-      for (let r = 0; r < size; r++) {
-        cells[r] = [];
-        for (let c = 0; c < size; c++) {
-          const cell = document.createElement("div");
-          cell.classList.add("cell");
-          cell.dataset.row = r;
-          cell.dataset.col = c;
-          cell.addEventListener("click", () => {
-            cell.classList.toggle("filled");
-          });
-          gridElement.appendChild(cell);
-          cells[r][c] = cell;
+      container.innerHTML = "";
+
+      const rowClues = getClues(solution, false);
+      const colClues = getClues(solution, true);
+      const clueSize = Math.max(
+        ...rowClues.map(c => c.length),
+        ...colClues.map(c => c.length)
+      );
+
+      container.style.gridTemplateColumns = `repeat(${clueSize + size}, 30px)`;
+      container.style.gridTemplateRows = `repeat(${clueSize + size}, 30px)`;
+
+      for (let r = 0; r < clueSize + size; r++) {
+        cells[r - clueSize] = [];
+        for (let c = 0; c < clueSize + size; c++) {
+          const div = document.createElement("div");
+
+          if (r < clueSize && c < clueSize) {
+            div.className = "clue-cell"; // top-left corner
+          } else if (r < clueSize && c >= clueSize) {
+            const clue = colClues[c - clueSize];
+            const offset = clueSize - clue.length;
+            div.className = "clue-cell";
+            div.textContent = clue[r - offset] || "";
+          } else if (r >= clueSize && c < clueSize) {
+            const clue = rowClues[r - clueSize];
+            const offset = clueSize - clue.length;
+            div.className = "clue-cell";
+            div.textContent = clue[c - offset] || "";
+          } else {
+            const row = r - clueSize;
+            const col = c - clueSize;
+            div.className = "cell";
+            if ((col + 1) % 5 === 0 && col !== size - 1) div.classList.add("thick-border-right");
+            if ((row + 1) % 5 === 0 && row !== size - 1) div.classList.add("thick-border-bottom");
+            div.dataset.row = row;
+            div.dataset.col = col;
+            div.addEventListener("click", (e) => {
+              if (e.button === 0) {
+                // Left click
+                div.classList.toggle("filled");
+                div.classList.remove("cross");
+              }
+            });
+            div.addEventListener("contextmenu", (e) => {
+              e.preventDefault();
+              div.classList.toggle("cross");
+              div.classList.remove("filled");
+            });
+            cells[row][col] = div;
+          }
+
+          container.appendChild(div);
         }
       }
+
       document.getElementById("result").textContent = "";
     }
 
@@ -114,7 +198,7 @@
         correct ? "✅ Correct!" : "❌ Try again.";
     }
 
-    initGrid(5); // Start with 5x5
+    initGrid(5);
   </script>
 </body>
 </html>
