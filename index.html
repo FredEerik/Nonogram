@@ -18,13 +18,12 @@
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(5, 40px);
-      grid-template-rows: repeat(5, 40px);
       gap: 2px;
+      margin-bottom: 10px;
     }
     .cell {
-      width: 40px;
-      height: 40px;
+      width: 30px;
+      height: 30px;
       background-color: white;
       border: 1px solid #ccc;
       box-sizing: border-box;
@@ -42,70 +41,80 @@
       font-weight: bold;
     }
     button {
-      margin-top: 15px;
+      margin: 5px;
       padding: 8px 16px;
     }
   </style>
 </head>
 <body>
   <h2>Nonogram Puzzle</h2>
-  <div class="clues">
-    <strong>Columns:</strong><br />
-    5 | 1 1 | 5 | 1 1 | 5
+  <div>
+    <button onclick="initGrid(5)">5×5</button>
+    <button onclick="initGrid(10)">10×10</button>
+    <button onclick="initGrid(15)">15×15</button>
   </div>
   <div class="grid" id="nonogram"></div>
-  <div class="clues">
-    <strong>Rows:</strong><br />
-    1 1 1<br />
-    5<br />
-    1<br />
-    5<br />
-    1 1 1
-  </div>
   <button onclick="checkSolution()">Check</button>
   <div id="result"></div>
 
   <script>
-    const solution = [
-      [1, 0, 1, 0, 1],
-      [1, 1, 1, 1, 1],
-      [0, 0, 1, 0, 0],
-      [1, 1, 1, 1, 1],
-      [1, 0, 1, 0, 1],
-    ];
+    let gridSize = 5;
+    let gridElement = document.getElementById("nonogram");
+    let cells = [];
+    let solution = [];
 
-    const gridElement = document.getElementById('nonogram');
-    const cells = [];
-
-    for (let row = 0; row < 5; row++) {
-      cells[row] = [];
-      for (let col = 0; col < 5; col++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.row = row;
-        cell.dataset.col = col;
-        cell.addEventListener('click', () => {
-          cell.classList.toggle('filled');
-        });
-        gridElement.appendChild(cell);
-        cells[row][col] = cell;
+    function generateSolution(size) {
+      const sol = [];
+      for (let r = 0; r < size; r++) {
+        const row = [];
+        for (let c = 0; c < size; c++) {
+          row.push(Math.random() < 0.4 ? 1 : 0); // 40% filled
+        }
+        sol.push(row);
       }
+      return sol;
+    }
+
+    function initGrid(size) {
+      gridSize = size;
+      solution = generateSolution(size);
+      gridElement.innerHTML = "";
+      gridElement.style.gridTemplateColumns = `repeat(${size}, 30px)`;
+      gridElement.style.gridTemplateRows = `repeat(${size}, 30px)`;
+      cells = [];
+      for (let r = 0; r < size; r++) {
+        cells[r] = [];
+        for (let c = 0; c < size; c++) {
+          const cell = document.createElement("div");
+          cell.classList.add("cell");
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.addEventListener("click", () => {
+            cell.classList.toggle("filled");
+          });
+          gridElement.appendChild(cell);
+          cells[r][c] = cell;
+        }
+      }
+      document.getElementById("result").textContent = "";
     }
 
     function checkSolution() {
       let correct = true;
-      for (let row = 0; row < 5; row++) {
-        for (let col = 0; col < 5; col++) {
-          const expected = solution[row][col];
-          const filled = cells[row][col].classList.contains('filled') ? 1 : 0;
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          const expected = solution[r][c];
+          const filled = cells[r][c].classList.contains("filled") ? 1 : 0;
           if (expected !== filled) {
             correct = false;
           }
         }
       }
-      document.getElementById('result').textContent =
-        correct ? '✅ Correct!' : '❌ Try again.';
+      document.getElementById("result").textContent =
+        correct ? "✅ Correct!" : "❌ Try again.";
     }
+
+    initGrid(5); // Start with 5x5
   </script>
 </body>
 </html>
