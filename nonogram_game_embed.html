@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nonogram Game</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f0f0f0;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 10px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 40px);
+      grid-template-rows: repeat(5, 40px);
+      gap: 2px;
+    }
+    .cell {
+      width: 40px;
+      height: 40px;
+      background-color: white;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+    .cell.filled {
+      background-color: #333;
+    }
+    .clues {
+      margin: 10px;
+      text-align: center;
+    }
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    button {
+      margin-top: 15px;
+      padding: 8px 16px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Nonogram Puzzle</h2>
+  <div class="clues">
+    <strong>Columns:</strong><br />
+    5 | 1 1 | 5 | 1 1 | 5
+  </div>
+  <div class="grid" id="nonogram"></div>
+  <div class="clues">
+    <strong>Rows:</strong><br />
+    1 1 1<br />
+    5<br />
+    1<br />
+    5<br />
+    1 1 1
+  </div>
+  <button onclick="checkSolution()">Check</button>
+  <div id="result"></div>
+
+  <script>
+    const solution = [
+      [1, 0, 1, 0, 1],
+      [1, 1, 1, 1, 1],
+      [0, 0, 1, 0, 0],
+      [1, 1, 1, 1, 1],
+      [1, 0, 1, 0, 1],
+    ];
+
+    const gridElement = document.getElementById('nonogram');
+    const cells = [];
+
+    for (let row = 0; row < 5; row++) {
+      cells[row] = [];
+      for (let col = 0; col < 5; col++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell');
+        cell.dataset.row = row;
+        cell.dataset.col = col;
+        cell.addEventListener('click', () => {
+          cell.classList.toggle('filled');
+        });
+        gridElement.appendChild(cell);
+        cells[row][col] = cell;
+      }
+    }
+
+    function checkSolution() {
+      let correct = true;
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 5; col++) {
+          const expected = solution[row][col];
+          const filled = cells[row][col].classList.contains('filled') ? 1 : 0;
+          if (expected !== filled) {
+            correct = false;
+          }
+        }
+      }
+      document.getElementById('result').textContent =
+        correct ? '✅ Correct!' : '❌ Try again.';
+    }
+  </script>
+</body>
+</html>
